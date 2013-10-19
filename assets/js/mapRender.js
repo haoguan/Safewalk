@@ -148,6 +148,16 @@ function convertMtToFt(meters) {
 function updateMarkers(number) {
 
     clearOverlays();
+    map = null;
+    var mapOptions = {
+		zoom: 15,
+		center: new google.maps.LatLng(0, 0),
+		disableDefaultUI: true,
+		mapTypeId: google.maps.MapTypeId.ROADMAP
+
+	};
+	map = new google.maps.Map(document.getElementById('map-canvas'),
+		mapOptions);
     var markers = [];
 
     // for (var i = 0; i < routeCrimePts[number].pathkb.length; i++) {
