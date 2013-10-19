@@ -1,0 +1,175 @@
+/* contains all functions for rendering */
+
+var directionArray = []
+
+function renderUser() {
+    console.log("+renderUser");
+    console.log("user Location: ");
+    // console.log(aUser);
+
+    // var point = aUser.getPt();
+    navigator.geolocation.getCurrentPosition(function(position) {
+        var point = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+        if (userMarker) {
+            userMarker.setPosition(point);
+        } else {
+            console.log("create hippo icon");
+            var pinIcon = new google.maps.MarkerImage(
+                "img/hippo.png",
+                null, /* size is determined at runtime */
+                null, /* origin is 0,0 */
+                null, /* anchor is bottom center of the scaled image */
+                new google.maps.Size(30, 20));
+
+            userMarker = new google.maps.Marker({
+                position: point,
+                map: map,
+                title: "Me!",
+                icon: pinIcon,
+                zIndex: 2
+
+            });
+        }
+        // map.setCenter(point);
+    });
+    console.log("-renderUser");
+    if (isTracking)
+        setTimeout(renderUser, 5000);
+}
+
+function renderRoute(routes, routeNum) {
+    /* HTML for drawing a single routeInfo
+	REQUIRES: routeCrimePts and totalCrimes*/
+
+    if (validRoute) {
+        var minutes = routeCrimePts[routeNum].duration;
+
+        var via = routeCrimePts[routeNum].via
+        var total = routeCrimePts[routeNum].totalCrimes + " crimes"
+        
+        Safewalk.retrieveRouteInfo(routeNum, via, total, minutes);
+        
+    }
+
+}
+
+function renderRoutes(routes) {
+    //Draws the 3 routes on the result page
+    for (var i = 0; i < routes.length; i++) {
+        renderRoute(routes, i)
+    }
+    //Safewalk.finishedRetrievingRoutes();
+    currentRouteNum = 0;
+
+}
+
+/**
+ * Updates direction display
+ * @param  {string} start  lat and lng of start location
+ * @param  {string} end    lat and lng of destination
+ * @param  {int} number index of current route
+ */
+
+function updateRouteRenderer(start, end, number) {
+
+	var request = {
+		origin: start,
+		destination: end,
+		provideRouteAlternatives: true,
+		travelMode: google.maps.DirectionsTravelMode.WALKING
+	};
+
+	directionsService.route(request, function(response, status) {
+		if (status == google.maps.DirectionsStatus.OK) {
+			
+			if(directionArray.length != 0){
+				directionArray.pop().setMap(null);
+			}
+			
+			var directionsDisplay;
+			directionsDisplay = new google.maps.DirectionsRenderer();
+			directionsDisplay.setMap(map);
+			directionsDisplay.setDirections(response);
+			directionsDisplay.setRouteIndex(routeCrimePts[number].routeNum);
+			directionArray.push(directionsDisplay);
+
+		} else {
+			console.log("Unable to get directionService information");
+		}
+	});
+}
+
+function displaySteps(step, i) {
+    // console.log("steps", step.instructions);
+    var distance = Math.round(convertMtToFt(step.distance.value));
+    if (distance >= 528) {
+        distance = step.distance.text;
+    } else {
+        distance += " ft";
+    }
+    var block = "";
+    if (i % 2 == 0) {
+        block += "<div class='step_block active'>";
+    } else {
+        block += "<div class='step_block'>";
+    }
+
+    block += "<div class='dir_picture blocks'></div>"
+    block += "<div class='dir_instructions blocks'>" + step.instructions + "</div>";
+    block += "<div class='dir_distance blocks'>" + distance + "</div>";
+    block += "</div>"
+    $('.directions').append(block);
+
+}
+
+function displayRoute(summary, duration) {
+    // $('.title_grid').append("<div class='ui-block-a title_block tba'></div>")
+    // $('.title_grid').append("<div class='ui-block-b title_block tbb'>" + summary + "</div>");
+    // $('.title_grid').append("<div class='ui-block-c title_block tbc'>" + duration) + "</div>";
+    var block = "";
+    block += "<div class='title_block'>";
+    block += "<div class='dir_picture blocks'></div>"
+    block += "<div class='dir_instructions blocks'>" + summary + "<br>" + duration + "</div>";
+    // block+="<div class='dir_distance blocks'>" + duration + "</div>";
+    block += "</div>"
+    $('.title_grid').append(block)
+}
+
+
+
+function convertMtToFt(meters) {
+    return meters * 3.28084;
+}
+/**
+ * Updates rendering for markers
+ * @param  {int} number index of current route
+ */
+
+function updateMarkers(number) {
+
+    clearOverlays();
+    var markers = [];
+
+    // for (var i = 0; i < routeCrimePts[number].pathkb.length; i++) {
+    // 	createPath(routeCrimePts[number].pathjb[i], routeCrimePts[number].pathkb[i]);
+    // };
+
+    console.log("+updateMarkers");
+    console.log("array length: " + routeCrimePts[number].array.length);
+    console.log("routeCrimePts[number].last " + routeCrimePts[number].last);
+    console.log("Size - ", routeCrimePts[number].array.length);
+    console.log("Last - ", routeCrimePts[number].last);
+    for (var i = routeCrimePts[number].last + 1, j = 0; i < routeCrimePts[number].array.length; i++) {
+        markers[j++] = createMark(routeCrimePts[number].array[i].Y, routeCrimePts[number].array[i].X);
+        // createInfoWindow(markers[j - 1], number, i);
+    }
+
+    var mcOptions = {
+        gridSize: 50,
+        maxZoom: 20
+    };
+    var markerCluster = new MarkerClusterer(map, markers, mcOptions);
+    clusterArray.push(markerCluster);
+
+
+}
