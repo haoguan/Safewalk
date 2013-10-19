@@ -85,7 +85,7 @@ function updateRouteRenderer(start, end, number) {
 			if(directionArray.length != 0){
 				directionArray.pop().setMap(null);
 			}
-			
+			 
 			var directionsDisplay;
 			directionsDisplay = new google.maps.DirectionsRenderer();
 			directionsDisplay.setMap(map);
